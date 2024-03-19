@@ -4,16 +4,22 @@ import AlertStorageClass
 import API_Calls
 import API_ResponseClass
 from datetime import date,time
+import Led
+import Buzzer
+import Button
 
 
 global alertStorage, todayAlerts
 alertStorage = AlertStorageClass.AlertStorage()
 todayAlerts = AlertStorageClass.AlertStorage()
 
+api = API_Calls.API_Calls("http://192.168.1.151:8000")
+buzzer = Buzzer.Buzzer(11)
+led = Led.Led(13)
+button = Button.Button(12)
 
 def GetAlertsFromAPI():
     # Get alerts from API
-    api = API_Calls.API_Calls("http://192.168.1.151:8000")
     alerts = api.get_data("api/alerts/index")
     print(alerts)
 
@@ -27,11 +33,17 @@ def CheckAlerts():
     print(todayAlerts)
 
 def TakeMedication():
-    
-    pass
+    buzzer.playsong(buzzerSong)
+    led.flash(flashTimer)
+    if(button.Button.isPressed() == True):
+        #envoi a l'api que le médicament a été pris
+
+        return
 
 def UpdateAlerts():
-    # Update the alert in the API
+    #Update the alert in the API
+    #alerts = api.set_data("api/alerts/index")
+
     pass
 
 def CreateAlarmForTakingMedication(ColorLed, Buzzer, TimeToTakeMedication,Type):

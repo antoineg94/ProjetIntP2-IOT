@@ -6,11 +6,11 @@ class Led:
         self.ledName = ledName
         self.ledPin = LED(ledPin)
     
-    def getLedName(self):
-        return self.ledName
+    #def getLedName(self):
+    #    return self.ledName
     
-    def getLedPin(self):
-        return self.ledPin
+    #def getLedPin(self):
+    #    return self.ledPin
     
     def getLedState(self):
         return self.ledState
@@ -26,7 +26,9 @@ class Led:
         self.ledPin.off()
         self.ledState = False
      
-    def Flash(self):
+    def Flash(self, flashTimer):
+    t_end = time.time() + 60 * flashTimer
+    while time.time() < t_end:
         self.ledPin.blink() 
           
     
