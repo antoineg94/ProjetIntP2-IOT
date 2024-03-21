@@ -3,10 +3,37 @@
 import AlertStorageClass
 import API_Calls
 import API_ResponseClass
-from datetime import date,time
-import Led
-import Buzzer
-import Button
+from datetime import date
+import time
+from gpiozero import TonalBuzzer,Button,LED
+import RPi.GPIO as GPIO
+import math
+from gpiozero.tones import Tone
+import threading
+
+exit_event = threading.Event()
+global wait_time_inside_thread, delay_checking_new_data
+
+wait_time_inside_thread = 50 #Seconds
+delay_checking_new_data = 45 #Seconds
+
+def TakeMedicationTest(exit_event, wait_time_inside_thread):
+    while not button.is_pressed:
+        alertor()
+        led.on()
+        if button.is_pressed:
+            print('Medication taken')
+            led.off()
+            stopAlertor()
+        return
+
+
+dht_thread = threading.Thread(target=TakeMedicationTest, args=(exit_event,wait_time_inside_thread,))
+
+
+
+
+
 
 
 global alertStorage, todayAlerts
@@ -14,9 +41,10 @@ alertStorage = AlertStorageClass.AlertStorage()
 todayAlerts = AlertStorageClass.AlertStorage()
 
 api = API_Calls.API_Calls("http://192.168.1.151:8000")
-buzzer = Buzzer.Buzzer(11)
-led = Led.Led(13)
-button = Button.Button(12)
+
+buzzer = TonalBuzzer(17)
+button = Button(18)
+led = LED(22)
 
 def GetAlertsFromAPI():
     # Get alerts from API
@@ -33,12 +61,24 @@ def CheckAlerts():
     print(todayAlerts)
 
 def TakeMedication():
-    buzzer.playsong(buzzerSong)
-    led.flash(flashTimer)
-    if(button.Button.isPressed() == True):
-        #envoi a l'api que le médicament a été pris
+	buzzer.playsong(buzzerSong)
+	(LED(15)).on()
+	if button.is_pressed:
+		print('Medication taken')
+		return
 
-        return
+
+
+    
+def alertor():
+    buzzer.play(Tone(220.0)) 
+    time.sleep(1)
+        
+def stopAlertor():
+    buzzer.stop()
+            
+def destroy():
+    buzzer.close()  
 
 def UpdateAlerts():
     #Update the alert in the API
@@ -46,34 +86,11 @@ def UpdateAlerts():
 
     pass
 
-def CreateAlarmForTakingMedication(ColorLed, Buzzer, TimeToTakeMedication,Type):
-    # Create an alarm for taking medication
-    match(Type):
-        case "Warning":
-            ColorLed.setColor("Red")
-            Buzzer.setBuzzer(1)
-        case "Info":
-            ColorLed.setColor("Blue")
-            Buzzer.setBuzzer(0)
-        case "Success":
-            ColorLed.setColor("Green")
-            Buzzer.setBuzzer(0)
-        case "Error":
-            ColorLed.setColor("Red")
-            Buzzer.setBuzzer(1)
-        case _:
-            print("Invalid Type")
-    pass
-    # 
-    pass
-
-
-
-
 def main():
-    GetAlertsFromAPI()
-    print(alertStorage)
-    pass
+    print('debut')
+    dht_thread.start()
+        
+        
 
 if __name__ == "__main__":
     try:
@@ -81,15 +98,11 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("Exiting...")
-        pass
+
     except Exception as e:
         print(e)
-        pass
+        
     finally:
         print("Done")
-        pass
-    
-#
- 
-    
-    
+  
+
