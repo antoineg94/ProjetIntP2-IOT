@@ -3,6 +3,7 @@
 import AlertStorageClass
 import API_Calls
 import API_ResponseClass
+from datetime import date
 import time
 from gpiozero import TonalBuzzer,Button,LED
 import RPi.GPIO as GPIO
@@ -11,7 +12,28 @@ from gpiozero.tones import Tone
 import threading
 
 exit_event = threading.Event()
-button_exit_event = threading.Event()
+global wait_time_inside_thread, delay_checking_new_data
+
+wait_time_inside_thread = 50 #Seconds
+delay_checking_new_data = 45 #Seconds
+
+def TakeMedicationTest(exit_event, wait_time_inside_thread):
+    while not button.is_pressed:
+        alertor()
+        led.on()
+        if button.is_pressed:
+            print('Medication taken')
+            led.off()
+            stopAlertor()
+        return
+
+
+dht_thread = threading.Thread(target=TakeMedicationTest, args=(exit_event,wait_time_inside_thread,))
+
+
+
+
+
 
 
 global alertStorage, todayAlerts
@@ -38,20 +60,19 @@ def GetAlertsFromAPI():
 #             todayAlerts.addAlert(alert)
 #     print(todayAlerts)
 
-# def TakeMedication():
-# 	buzzer.playsong(buzzerSong)
-# 	(LED(15)).on()
-# 	if button.is_pressed:
-# 		print('Medication taken')
-		# return
+def TakeMedication():
+	buzzer.playsong(buzzerSong)
+	(LED(15)).on()
+	if button.is_pressed:
+		print('Medication taken')
+		return
+
+
 
     
-def alertor(exit_event):
-    while not exit_event.is_set():
-        buzzer.play(Tone(220.0))
-        time.sleep(5)
-        buzzer.stop()
-        time.sleep(5)
+def alertor():
+    buzzer.play(Tone(220.0)) 
+    time.sleep(1)
         
 def stopAlertor():
     buzzer.stop()
@@ -59,52 +80,17 @@ def stopAlertor():
 def destroy():
     buzzer.close()  
 
-def FlashLed(exit_event):
-    while not exit_event.is_set():
-        led.on()
-        time.sleep(5)
-        led.off()
-        time.sleep(5)
-
-
 def UpdateAlerts():
     #Update the alert in the API
     #alerts = api.set_data("api/alerts/index")
 
     pass
 
-def TakeMedicationTest(exit_event):
-    while not exit_event.is_set():
-        alertor()
-        FlashLed()
-        
-
-def CheckForButtonPress(exit_event):
-    while not exit_event.is_set():
-        if button.is_pressed:
-            print('Medication taken')
-            button_exit_event.set()
-        time.sleep(0.1)
-
-alertor_thread = threading.Thread(target=alertor, args=(button_exit_event,))
-FlashLed_thread = threading.Thread(target=FlashLed, args=(button_exit_event,))
-
-# take_medic_thread = threading.Thread(target=TakeMedicationTest, args=(button_exit_event,))
-button_thread = threading.Thread(target=CheckForButtonPress,args=(exit_event,))
-
-
 def main():
- 
-    # take_medic_thread.start()
-    alertor_thread.start()
-    FlashLed_thread.start()
-    button_thread.start()
-    
-def resetButtonEvent():
-    button_exit_event.clear()
-    
-    print("Button event cleared")
-    return
+    print('debut')
+    dht_thread.start()
+        
+        
 
 def stop():
     exit_event.set()
@@ -125,8 +111,6 @@ if __name__ == "__main__":
 
     except KeyboardInterrupt:
         print("Exiting...")
-        exit_event.set()
-        stop()
 
     except Exception as e:
         print(e)
